@@ -1,0 +1,239 @@
+{
+    "info": {
+        "_postman_id": "zivpn-collection-v2",
+        "name": "ZiVPN API v2",
+        "description": "Collection for managing ZiVPN Users and System via API. Includes new endpoints for Cron and System Info.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "User Management",
+            "item": [
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"password\": \"user123\",\n    \"days\": 30,\n    \"ip_limit\": 2\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/create",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "create"
+                            ]
+                        },
+                        "description": "Create a new VPN user."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"password\": \"user123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/delete",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "delete"
+                            ]
+                        },
+                        "description": "Delete an existing VPN user."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Renew User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"password\": \"user123\",\n    \"days\": 30\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/renew",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "renew"
+                            ]
+                        },
+                        "description": "Extend the expiration date of a user."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/users",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users"
+                            ]
+                        },
+                        "description": "Get a list of all registered users."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "System",
+            "item": [
+                {
+                    "name": "System Info",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/info",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "info"
+                            ]
+                        },
+                        "description": "Get system information (IP, Port, Domain)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Trigger Expiration Check (Cron)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/cron/expire",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cron",
+                                "expire"
+                            ]
+                        },
+                        "description": "Manually trigger the daily expiration check (usually run by Cron)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Cleanup Expired Users",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/cron/cleanup",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cron",
+                                "cleanup"
+                            ]
+                        },
+                        "description": "Delete all expired users from both config.json and users.json database."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://YOUR_VPS_IP:8080",
+            "type": "string"
+        },
+        {
+            "key": "api_key",
+            "value": "YOUR_API_KEY",
+            "type": "string"
+        }
+    ]
+}

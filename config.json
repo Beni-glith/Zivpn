@@ -1,0 +1,12 @@
+{
+  "listen": ":5667",
+  "cert": "/etc/zivpn/zivpn.crt",
+  "key": "/etc/zivpn/zivpn.key",
+  "obfs": "zivpn",
+  "auth": {
+    "mode": "external",
+    "config": {
+      "http": "http://127.0.0.1:4488/auth"
+    }
+  }
+}
