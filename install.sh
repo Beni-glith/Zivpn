@@ -36,6 +36,61 @@ run_silent() {
   fi
 }
 
+# Compare versions (semantic-ish) using sort -V
+version_ge() {
+  # returns 0 if $1 >= $2
+  [ "$(printf '%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]
+}
+
+install_go() {
+  local go_ver="${1:-1.22.13}"
+  local arch="amd64"
+  local os="linux"
+  local tar="go${go_ver}.${os}-${arch}.tar.gz"
+  local url="https://go.dev/dl/${tar}"
+
+  # Prefer curl, fallback to wget
+  if command -v curl &>/dev/null; then
+    curl -fsSL "$url" -o "/tmp/${tar}"
+  elif command -v wget &>/dev/null; then
+    wget -q "$url" -O "/tmp/${tar}"
+  else
+    return 1
+  fi
+
+  rm -rf /usr/local/go
+  tar -C /usr/local -xzf "/tmp/${tar}" || return 1
+
+  # Persist PATH
+  mkdir -p /etc/profile.d
+  cat <<'EOF' > /etc/profile.d/golang.sh
+export PATH=/usr/local/go/bin:$PATH
+EOF
+
+  # Make available for current session too
+  export PATH=/usr/local/go/bin:$PATH
+  return 0
+}
+
+ensure_go_version() {
+  local required="${1:-1.20.0}"
+  local install_ver="${2:-1.22.13}"
+
+  if ! command -v go &>/dev/null; then
+    install_go "$install_ver" || return 1
+  else
+    local current
+    current="$(go version 2>/dev/null | awk '{print $3}' | sed 's/^go//')"
+    # If parsing fails, force reinstall
+    if [[ -z "$current" ]]; then
+      install_go "$install_ver" || return 1
+    elif ! version_ge "$current" "$required"; then
+      install_go "$install_ver" || return 1
+    fi
+  fi
+  return 0
+}
+
 clear
 echo -e "${BOLD}ZiVPN UDP Installer${RESET}"
 echo -e "${GRAY}AutoFTbot Edition${RESET}"
@@ -152,7 +207,15 @@ mkdir -p /etc/zivpn/api
 run_silent "Setting up API" "wget -q https://raw.githubusercontent.com/Beni-glith/ZiVPN/main/zivpn-api.go -O /etc/zivpn/api/zivpn-api.go && wget -q https://raw.githubusercontent.com/Beni-glith/ZiVPN/main/go.mod -O /etc/zivpn/api/go.mod"
 
 cd /etc/zivpn/api
-run_silent "Resolving API deps" "go mod tidy"
+
+# Ensure Go >= 1.20 (go.mod requires it)
+print_task "Checking Go version"
+if ensure_go_version "1.20.0" "1.22.13" &>>/tmp/zivpn_install.log; then
+  print_done "Checking Go version"
+else
+  print_fail "Checking Go version (Check /tmp/zivpn_install.log)"
+fi
+
 if go build -o zivpn-api zivpn-api.go 2>/tmp/zivpn_api_build.log; then
   print_done "Compiling API"
 else
@@ -235,6 +298,8 @@ EOF
     systemctl start zivpn-bot.service &>/dev/null
   else
     print_fail "Compiling Bot"
+    echo -e "${YELLOW}Build log (last 30 lines):${RESET}"
+    tail -n 30 /tmp/zivpn_bot_build.log 2>/dev/null || true
   fi
 else
   print_task "Skipping Bot Setup"
