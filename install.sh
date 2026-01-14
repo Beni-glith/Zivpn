@@ -43,11 +43,31 @@ version_ge() {
 }
 
 install_go() {
-  local go_ver="${1:-1.22.13}"
+  local go_ver="${1:-latest}"
   local arch="amd64"
   local os="linux"
-  local tar="go${go_ver}.${os}-${arch}.tar.gz"
-  local url="https://go.dev/dl/${tar}"
+  local tar=""
+  local url=""
+
+  # If go_ver is "latest", discover the latest stable Linux amd64 tarball from Go's official JSON feed.
+  if [ "$go_ver" = "latest" ]; then
+    local json
+    if command -v curl &>/dev/null; then
+      json="$(curl -fsSL "https://go.dev/dl/?mode=json")" || return 1
+    elif command -v wget &>/dev/null; then
+      json="$(wget -qO- "https://go.dev/dl/?mode=json")" || return 1
+    else
+      return 1
+    fi
+
+    # Extract first (latest) linux-amd64 archive filename like: go1.24.9.linux-amd64.tar.gz
+    tar="$(printf "%s" "$json" | grep -m1 -oE 'go[0-9]+\.[0-9]+(\.[0-9]+)?\.linux-amd64\.tar\.gz')" || return 1
+    go_ver="$(printf "%s" "$tar" | sed -E 's/^go([0-9]+\.[0-9]+(\.[0-9]+)?)\.linux-amd64\.tar\.gz$/\1/')"
+  else
+    tar="go${go_ver}.${os}-${arch}.tar.gz"
+  fi
+
+  url="https://go.dev/dl/${tar}"
 
   # Prefer curl, fallback to wget
   if command -v curl &>/dev/null; then
@@ -61,20 +81,19 @@ install_go() {
   rm -rf /usr/local/go
   tar -C /usr/local -xzf "/tmp/${tar}" || return 1
 
-  # Persist PATH
-  mkdir -p /etc/profile.d
-  cat <<'EOF' > /etc/profile.d/golang.sh
-export PATH=/usr/local/go/bin:$PATH
-EOF
-
-  # Make available for current session too
+  # Make available persistently + for current session
+  if ! grep -q "/usr/local/go/bin" /etc/profile 2>/dev/null; then
+    echo 'export PATH=/usr/local/go/bin:$PATH' >> /etc/profile
+  fi
   export PATH=/usr/local/go/bin:$PATH
   return 0
 }
 
+
+
 ensure_go_version() {
   local required="${1:-1.20.0}"
-  local install_ver="${2:-1.22.13}"
+  local install_ver="${2:-latest}"
 
   if ! command -v go &>/dev/null; then
     install_go "$install_ver" || return 1
@@ -210,7 +229,7 @@ cd /etc/zivpn/api
 
 # Ensure Go >= 1.20 (go.mod requires it)
 print_task "Checking Go version"
-if ensure_go_version "1.20.0" "1.22.13" &>>/tmp/zivpn_install.log; then
+if ensure_go_version "1.20.0" "latest" &>>/tmp/zivpn_install.log; then
   print_done "Checking Go version"
 else
   print_fail "Checking Go version (Check /tmp/zivpn_install.log)"
